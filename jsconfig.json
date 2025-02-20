@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"module": "Node16",
+		"target": "ES2022",
+		"checkJs": true, /* Typecheck .js files. */
+		"lib": [
+			"ES2022"
+		]
+	},
+	"include": [
+		"*.js"
+, "extension.js", "htmlParser.js"	],
+	"exclude": [
+		"node_modules"
+	]
+}

@@ -1,0 +1,76 @@
+{
+  "name": "yongha",
+  "displayName": "Animate Extension",
+  "description": "This extension was created for Adobe Animate.",
+  "version": "0.0.4",
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "publisher": "yonghaMorph",
+  "categories": [
+    "Extension Packs"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/actions/script_setting.xml"
+  ],
+  "main": "./extension.js",
+  "license": "MIT",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "myCustomViewContainer",
+          "title": "My Files"
+        }
+      ]
+    },
+    "views": {
+      "myCustomViewContainer": [
+        {
+          "id": "fileListView",
+          "name": "Animate File View"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "extension.openCustomCommandWindow",
+        "title": "Animate"
+      },
+      {
+        "command": "extension.openFile",
+        "title": "Open File"
+      },
+      {
+        "command": "extension.refreshTreeView",
+        "title": "Refresh"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "extension.refreshTreeView",
+          "when": "view == fileListView",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "vscode-test"
+  },
+  "dependencies": {
+    "jsdom": "^26.0.0",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.97.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.19.0"
+  }
+}
