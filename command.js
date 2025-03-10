@@ -21,7 +21,7 @@ module.exports = {
 
 function commandProvider(context) {
 
-    let disposable = vscode.commands.registerCommand('extension.openCustomCommandWindow', async function () {
+    let command = vscode.commands.registerCommand('extension.openCustomCommandWindow', async function () {
         // 실행할 명령 옵션 배열 (QuickPickItem 형식)
         const options = [
             { label: ApplyAndBuildLabel, description: '작성한 Script들을 Animate에 적용하고 빌드합니다' },
@@ -66,7 +66,7 @@ function commandProvider(context) {
         }
     });
 
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(command);
 
     // JSFL 실행 결과를 처리하는 공통 함수
     function handleJSFL(command, successMessage, errorPrefix) {

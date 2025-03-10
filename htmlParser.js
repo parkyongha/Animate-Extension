@@ -1,14 +1,14 @@
 const vscode = require('vscode');
 const cheerio = require('cheerio');
 
+// 요소들을 가져올 html 링크
+const url = 'https://createjs.com/docs/easeljs/classes/MovieClip.html';
+
 module.exports = {
   completionItemProvider
 };
 
 async function completionItemProvider(context) {
-  // 요소들을 가져올 html 링크
-  const url = 'https://createjs.com/docs/easeljs/classes/MovieClip.html';
-
   let htmlData;
 
   try {
@@ -25,27 +25,54 @@ async function completionItemProvider(context) {
     ...htmlData.properties
   ];
 
+  const completionItems = getCompletionItems();
+
+  const createProvider = () => {
+   return vscode.languages.registerCompletionItemProvider(
+      { scheme: 'file', language: 'javascript' },
+      {
+        provideCompletionItems(document, position) {
+          return completionItems;
+        }
+      },
+      '.' // 트리거 문자
+    );
+ }
+
   // CompletionItemProvider 등록
-  const provider = vscode.languages.registerCompletionItemProvider(
-    { scheme: 'file', language: 'javascript' },
-    {
-      provideCompletionItems(document, position) {
-        return completionsArray.map(data => {
-          const item = new vscode.CompletionItem(data.title);
-          // kind 매핑: methods → Function, properties → Property
-          item.kind = data.kind === "function" ? vscode.CompletionItemKind.Function : vscode.CompletionItemKind.Property;
-          item.documentation = new vscode.MarkdownString(data.documentation);
-          item.insertText = new vscode.SnippetString(data.insertText);
-          return item;
-        });
-      }
-    },
-    '.' // 트리거 문자
-  );
+  let provider = createProvider();
+  let providerActive = true;
+
+  // 커맨드 등록 (package.json에도 "extension.toggleProvider" 명령을 등록해야 합니다)
+ let toggleProvider = vscode.commands.registerCommand('extension.toggleCompletionItemProvider', () => {
+    if (providerActive) {
+      // provider 비활성화: dispose() 호출하여 리소스 해제
+      provider.dispose();
+      providerActive = false;
+      vscode.window.showInformationMessage('Provider deactivated.');
+    } else {
+      // provider 활성화: 새 provider 생성 후 subscriptions에 추가
+      provider = createProvider();
+      context.subscriptions.push(provider);
+      providerActive = true;
+      vscode.window.showInformationMessage('Provider activated.');
+    }
+  });
 
   context.subscriptions.push(provider);
-}
+  context.subscriptions.push(toggleProvider);
 
+  function getCompletionItems() {
+    return completionsArray.map(data => {
+      const item = new vscode.CompletionItem(data.title);
+      // kind 매핑: methods → Function, properties → Property
+      item.kind = data.kind === "function" ? vscode.CompletionItemKind.Function : vscode.CompletionItemKind.Property;
+      item.documentation = new vscode.MarkdownString(data.documentation);
+      item.insertText = new vscode.SnippetString(data.insertText);
+      return item;
+    });
+  }
+}
 
 /**
  * 주어진 HTML 콘텐츠에서 methods 정보를 파싱합니다.
@@ -226,7 +253,7 @@ async function parseHtmlFromUrl(url) {
   }
 
   const htmlContent = await response.text();
-  
+
   return parseHtmlContent(htmlContent);
 }
 

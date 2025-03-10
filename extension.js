@@ -2,6 +2,7 @@ const vscode = require('vscode');
 const htmlParser = require('./htmlParser.js');
 const myCommand = require('./command.js');
 const myView = require('./view.js');
+const scriptDirtyChecker = require('./scriptDirtyChecker.js');
 
 let scriptNames = [];
 
@@ -21,6 +22,8 @@ async function Initialization(context) {
   myCommand.commandProvider(context);
 
   myView.viewProvider(context);
+
+  scriptDirtyChecker.onDirtyCheck(context);
 
   await htmlParser.completionItemProvider(context);
 
