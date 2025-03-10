@@ -9,7 +9,7 @@
 	},
 	"include": [
 		"*.js"
-, "extension.js", "htmlParser.js"	],
+	],
 	"exclude": [
 		"node_modules"
 	]

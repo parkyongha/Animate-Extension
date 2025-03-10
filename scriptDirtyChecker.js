@@ -1,45 +1,67 @@
+const globals = require('./globals');
 const vscode = require('vscode');
+const fs = require('fs');
+const path = require('path');
+const xml2js = require('xml2js');
+
+/**
+ * 텍스트 문서 변경 이벤트를 등록하여 Dirty 체크를 수행합니다.
+ * @param {vscode.ExtensionContext} context
+ */
+function onDirtyCheck(context) {
+    const onChangeText = vscode.workspace.onDidChangeTextDocument(event => {
+        const filePath = event.document.fileName;
+        const fileName = path.basename(filePath);
+
+        // 파일의 부모 디렉터리의 부모 디렉터리를 사용
+        const folderPath = path.resolve(path.dirname(filePath), '..');
+
+        console.log(`텍스트 변경\nfolderPath: ${folderPath}\nfileName: ${fileName}`);
+
+        const folderData = globals.folderDatas[folderPath];
+
+        if (!folderData) {
+            console.warn(`폴더 데이터가 없습니다: ${folderPath}`);
+            return;
+        }
+
+        if (folderData.scripts.includes(fileName)) {
+            markXmlDirty(folderPath, fileName);
+        }
+    });
+
+    context.subscriptions.push(onChangeText);
+}
+
+/**
+ * 지정된 폴더의 XML 데이터에서 해당 프레임을 Dirty 처리한 후, XML 파일로 저장합니다.
+ * @param {string} folderPath - 폴더 경로
+ * @param {string} fileName - 변경된 파일 이름
+ */
+function markXmlDirty(folderPath, fileName) {
+    const folderData = globals.folderDatas[folderPath];
+
+    const targetFrame = folderData.frames.find(frame => frame._ === fileName);
+    if (targetFrame) {
+        targetFrame.$.dirty = true;
+        console.log(`Dirty 처리 완료: ${fileName}`);
+
+        const actionPath = path.join(folderPath, 'actions', 'script_setting.xml');
+        
+        // { headless: true } 요거 필수
+        const builder = new xml2js.Builder({ headless: true });
+        const updatedXml = builder.buildObject(folderData.xml);
+
+        fs.writeFile(actionPath, updatedXml, 'utf8', err => {
+            if (err) {
+                console.error('XML 파일 저장 중 오류 발생:', err);
+            } else {
+                console.log('XML 파일이 성공적으로 저장되었습니다:', actionPath);
+            }
+        });
+    }
+}
 
 module.exports = {
     onDirtyCheck
-}
-
-function onDirtyCheck(context) {
-    // 텍스트 문서가 변경될 때마다 실행되는 이벤트 리스너 등록
-    let disposable = vscode.workspace.onDidChangeTextDocument((event) => {
-
-        const filePath = event.document.fileName;
-        
-        if (filePath.endsWith('script.js')) {
-            markXmlDirty();
-        }
-    });
-
-    context.subscriptions.push(disposable);
-}
-
-function markXmlDirty() {
-    // XML 파일을 열어서 편집을 시도하는 예시
-    // 현재 활성화된 텍스트 에디터가 있는지 확인
-    const activeEditor = vscode.window.activeTextEditor;
-
-    if (activeEditor) {
-        const currentFileUri = activeEditor.document.uri;
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(currentFileUri);
-        if (workspaceFolder) {
-            console.log('현재 파일이 속한 폴더 이름:', workspaceFolder.name);
-        } else {
-            console.log('현재 파일이 워크스페이스 폴더에 속하지 않습니다.');
-        }
-    }
-
-    const xmlFilePath = vscode.Uri.file('/path/to/your/file.xml');
-    vscode.workspace.openTextDocument(xmlFilePath).then(doc => {
-        vscode.window.showTextDocument(doc).then(editor => {
-            // 예를 들어, 현재 내용에 주석을 추가하는 식으로 편집을 진행하여 dirty 상태로 만듭니다.
-            editor.edit(editBuilder => {
-                editBuilder.insert(new vscode.Position(0, 0), '<!-- dirty flag true -->\n');
-            });
-        });
-    });
-}
+};

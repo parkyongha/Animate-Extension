@@ -4,8 +4,6 @@ const myCommand = require('./command.js');
 const myView = require('./view.js');
 const scriptDirtyChecker = require('./scriptDirtyChecker.js');
 
-let scriptNames = [];
-
 async function activate(context) {
   console.log('Extension "yh" is now active!');
 
@@ -34,7 +32,6 @@ function deactivate() { }
 
 module.exports = {
   activate,
-  deactivate,
-  scriptNames
+  deactivate
 }
 

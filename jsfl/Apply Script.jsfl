@@ -32,51 +32,60 @@ function loadFiles() {
 	path = path.toLowerCase();
 
 	if (path.indexOf(".xfl") !== -1) {
-		fl.trace("현재 열린 파일은 XFL 형식입니다.");
+		// fl.trace("현재 열린 파일은 XFL 형식입니다.");
 		remainingParts = parts.slice(0, parts.length - 2);
 
 	} else if (path.indexOf(".fla") !== -1) {
-		fl.trace("현재 열린 파일은 FLA 형식입니다.");
+		// fl.trace("현재 열린 파일은 FLA 형식입니다.");
 		remainingParts = parts.slice(0, parts.length - 1);
 	}
 
 	fileInfo.actionsPath = remainingParts.join("\\") + "\\actions\\";
 
-	fl.trace(fileInfo.actionsPath);
+	// fl.trace(fileInfo.actionsPath);
+
+	var convertedPath = convertWindowsPathToURI(fileInfo.actionsPath);
 
 	// actionsPath 폴더의 존재 여부를 확인합니다.
-	if (FLfile.exists(fileInfo.actionsPath)) {
-	  // 폴더가 존재한다면 해당 폴더의 'files' 목록을 가져옵니다.
-	  fileInfo.scripts = FLfile.listFolder(convertedPath, "files");
-	
-	  // 파일 목록이 null 이거나 빈 배열인 경우
-	  if (fileInfo.scripts == null || fileInfo.scripts.length === 0) {
-	    fl.trace("폴더는 존재하지만 파일이 없습니다.");
-	  } else {
-	    fl.trace("파일 목록:");
-	    fl.trace(fileInfo.scripts);
-	  }
+	if (FLfile.exists(convertedPath)) {
+		// 폴더가 존재한다면 해당 폴더의 'files' 목록을 가져옵니다.
+		fileInfo.scripts = FLfile.listFolder(convertedPath, "files");
+
+		// 파일 목록이 null 이거나 빈 배열인 경우
+		if (fileInfo.scripts == null || fileInfo.scripts.length === 0) {
+			fl.trace("폴더는 존재하지만 파일이 없습니다.");
+		} else {
+			// fl.trace("파일 목록:");
+			// fl.trace(fileInfo.scripts);
+		}
 	} else {
-	  // 폴더 자체가 존재하지 않을 때
-	  fl.trace("폴더가 존재하지 않습니다: " + fileInfo.actionsPath);
+		// 폴더 자체가 존재하지 않을 때
+		fl.trace("폴더가 존재하지 않습니다: " + convertedPath);
 	}
 
 	return fileInfo;
 }
 
 function applyScript(fileInfo) {
+	var fileURL = convertWindowsPathToURI(fileInfo.actionsPath + "script_setting.xml");
+	var xmlContent = FLfile.read(fileURL);
 
-	fileInfo.scripts.forEach(function (actionFile) {
-		fl.trace("파싱할 Script : " + actionFile);
+	// XML 선언(<?xml ... ?>)을 정규식을 사용해서 제거합니다.
+	xmlContent = xmlContent.replace(/<\?xml.*?\?>\s*/, "");
 
-		if (actionFile.lastIndexOf(".js") == -1) {
-			return;
-		}
+	var xmlData = new XML(xmlContent);
+	// fl.trace("xml Data : " + xmlData.children().frame);
 
+	for each(var frame in xmlData.children().frame) {
+		var actionFile = frame.toString();
+
+		if (frame.@dirty == false)
+			continue;
+
+		frame.@dirty = false;
+		
 		// 확장자 제거
 		var actionFileName = actionFile.slice(0, -3);
-
-		fl.trace(actionFileName);
 
 		// 파일명 파싱 '심볼경로-레이어-프레임번호' 식으로 구성되어 있음
 		var actionSep = actionFileName.split("-");
@@ -86,37 +95,42 @@ function applyScript(fileInfo) {
 		var targetLayer = actionSep[1];
 		var frame = actionSep[2];
 
-
 		if (symbolPath == "Main")
 			gotoMainTimeline();
 		else
 			doc.library.editItem(symbolPath);
 
-		fl.trace("symbolPath : " + symbolPath);
-
-		fl.trace("targetLayer : " + targetLayer);
 
 		var timeline = doc.getTimeline();
 
 		var layers = timeline.layers;
 
 		var selectedLayer = layers.filter(function (layer) {
-			fl.trace("레이어 이름 : " + layer.name);
 			return (layer.name === targetLayer) && layer.layerType === "normal";
 		})[0];
 
-		fl.trace("layer : " + selectedLayer.name);
-		fl.trace("frame : " + frame);
+		var output = "=== Apply Script Info ==================\n";
+		output += "Symbol Path : " + symbolPath + "\n";
+		output += "Layer       : " + selectedLayer.name + "\n";
+		output += "Frame       : " + frame + "\n";
+		output += "========================================\n\n";
+		fl.trace(output);
 
 		var script = FLfile.read(convertWindowsPathToURI(fileInfo.actionsPath + actionFile));
 
 		if (script) {
-			fl.trace("성공 test : " + selectedLayer.frames.length);
-			fl.trace("script : " + script);
-
 			selectedLayer.frames[frame].actionScript = script;
 		}
-	});
+	}
+
+	var newXMLString = xmlData.toXMLString();
+
+	// 변경된 XML 문자열을 다시 파일로 저장
+	if (FLfile.write(fileURL, newXMLString)) {
+		fl.trace("XML 파일이 성공적으로 저장되었습니다: " + fileURL);
+	} else {
+		fl.trace("XML 파일 저장에 실패했습니다: " + fileURL);
+	}
 }
 
 // Windows 경로를 파일 URL 형식으로 변환하는 함수

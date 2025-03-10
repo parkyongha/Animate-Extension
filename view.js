@@ -1,3 +1,5 @@
+const globals = require('./globals');
+
 const vscode = require('vscode');
 const path = require('path');
 const fs = require('fs');
@@ -87,6 +89,8 @@ class FileTreeDataProvider {
             return;
         }
 
+
+
         workspaceFolders.forEach((folder) => {
             console.log("Work Space Folders : " + folder.uri.fsPath);
 
@@ -96,12 +100,19 @@ class FileTreeDataProvider {
 
             const xmlFilePath = path.join(folder.uri.fsPath, 'actions', 'script_setting.xml');
 
-
             fs.readFile(xmlFilePath, 'utf8', (err, xmlData) => {
                 if (err) {
                     console.error('XML 파일 읽기 에러:', err);
                     return;
                 }
+
+                globals.folderDatas[folder.uri.fsPath] = {
+                    xml: null,
+                    frames: [],
+                    scripts: []
+                }
+
+                let folderData = globals.folderDatas[folder.uri.fsPath];
 
                 // 읽어온 XML 문자열 파싱
                 parser.parseString(xmlData, (err, result) => {
@@ -110,6 +121,7 @@ class FileTreeDataProvider {
                         return;
                     }
 
+                    folderData.xml = result;
 
                     // 전체 파싱 결과 출력 (객체 형태)
                     console.log('전체 파싱 결과:', result);
@@ -141,6 +153,9 @@ class FileTreeDataProvider {
                             var frameTreeItem = new FileTreeItem(fileName, filePath);
 
                             framesTreeItems.push(frameTreeItem);
+
+                            folderData.frames.push(frame);
+                            folderData.scripts.push(frame._);
                         });
 
                         var symbolTreeItem = new FileTreeItem(symbol.$.name, folder.uri.fsPath, framesTreeItems);
@@ -157,9 +172,10 @@ class FileTreeDataProvider {
                     // 다시 렌더링 하도록 요청
                     this._onDidChangeTreeData.fire();
                 });
-            });
 
+            });
         });
+
     }
 
     getTreeItem(element) {
