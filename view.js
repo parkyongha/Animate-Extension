@@ -5,7 +5,11 @@ const xml2js = require('xml2js');
 
 const parser = new xml2js.Parser({ explicitArray: true });
 
-function activate(context) {
+module.exports = {
+    viewProvider
+}
+
+function viewProvider(context) {
     // TreeDataProvider 생성 및 TreeView 등록
     const fileTreeDataProvider = new FileTreeDataProvider();
 
@@ -19,6 +23,11 @@ function activate(context) {
         fileTreeDataProvider.refresh();
     });
 
+    // 작업영역에 폴더가 추가되거나 제거될 때 자동으로 refresh 호출
+    vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+        fileTreeDataProvider.refresh();
+    });
+
     let openFileCommand = vscode.commands.registerCommand('extension.openFile', (filePath) => {
         // 파일 열기: 파일 경로를 사용해 텍스트 문서를 열고, 에디터에 표시합니다.
         vscode.workspace.openTextDocument(filePath).then(doc => {
@@ -28,13 +37,7 @@ function activate(context) {
         });
     });
 
-    context.subscriptions.push(treeView);
-    context.subscriptions.push(refreshCommand);
-    context.subscriptions.push(openFileCommand);
-}
-
-module.exports = {
-    activate
+    context.subscriptions.push(treeView, refreshCommand, openFileCommand);
 }
 
 // TreeItem 클래스 정의
@@ -65,6 +68,10 @@ class FileTreeItem extends vscode.TreeItem {
 // TreeDataProvider 구현
 class FileTreeDataProvider {
     constructor() {
+        // onDidChangeTreeData 이벤트 emitter 준비
+        this._onDidChangeTreeData = new vscode.EventEmitter();
+        this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+
         this.DataRefresh();
     }
 
@@ -145,6 +152,10 @@ class FileTreeDataProvider {
                     console.log("Project Name : " + projectName);
 
                     this.files.push(mainFileTreeItem);
+
+                    // 데이터가 변경됐음을 알림
+                    // 다시 렌더링 하도록 요청
+                    this._onDidChangeTreeData.fire();
                 });
             });
 
@@ -157,8 +168,7 @@ class FileTreeDataProvider {
 
     getChildren(element) {
         if (!element) {
-            // 루트 요소 반환
-            return Promise.resolve(this.files);
+            return this.files; // 이미 파싱된 결과
         }
         return element.children;
     }

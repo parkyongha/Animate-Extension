@@ -14,6 +14,8 @@ function main() {
 	var fileInfo = loadFiles();
 
 	applyScript(fileInfo);
+
+	gotoMainTimeline();
 }
 
 function loadFiles() {
@@ -42,8 +44,22 @@ function loadFiles() {
 
 	fl.trace(fileInfo.actionsPath);
 
-	fileInfo.scripts = FLfile.listFolder(convertWindowsPathToURI(fileInfo.actionsPath), "files");
-	fl.trace(fileInfo.scripts);
+	// actionsPath 폴더의 존재 여부를 확인합니다.
+	if (FLfile.exists(fileInfo.actionsPath)) {
+	  // 폴더가 존재한다면 해당 폴더의 'files' 목록을 가져옵니다.
+	  fileInfo.scripts = FLfile.listFolder(convertedPath, "files");
+	
+	  // 파일 목록이 null 이거나 빈 배열인 경우
+	  if (fileInfo.scripts == null || fileInfo.scripts.length === 0) {
+	    fl.trace("폴더는 존재하지만 파일이 없습니다.");
+	  } else {
+	    fl.trace("파일 목록:");
+	    fl.trace(fileInfo.scripts);
+	  }
+	} else {
+	  // 폴더 자체가 존재하지 않을 때
+	  fl.trace("폴더가 존재하지 않습니다: " + fileInfo.actionsPath);
+	}
 
 	return fileInfo;
 }
@@ -56,8 +72,6 @@ function applyScript(fileInfo) {
 		if (actionFile.lastIndexOf(".js") == -1) {
 			return;
 		}
-
-
 
 		// 확장자 제거
 		var actionFileName = actionFile.slice(0, -3);

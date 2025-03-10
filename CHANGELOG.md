@@ -1,9 +1,27 @@
-# Change Log
+# Animate Extension Change Log
 
-All notable changes to the "yh" extension will be documented in this file.
+### Ver 0.0.7
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+#### 신규 기능
 
-## [Unreleased]
+1. **robotjs를 활용한 JSFL 자동 실행 기능 추가**
+   - JSFL 실행 시 경고창이 나타나더라도 자동으로 처리되도록 개선하였습니다.
+   - 키보드 명령을 통해 'Run as Command'를 선택한 후 자동 실행합니다.
 
-- Initial release
+2. **자동완성 기능 향상**
+   - `jsconfig.json` 파일을 추가하여 컴파일 및 createjs 관련 자동완성 기능을 지원하도록 했습니다.
+
+3. **JSFL 실행 로그 개선**
+   - Apply Script 실행 시 적용된 스크립트 파일명과 실패한 스크립트 파일명을 명확하게 구분하도록 수정하였습니다.
+   - 콘솔 로그의 가독성을 향상하였습니다.
+
+4. **신규 JSFL 추가**
+   - 현재 열려있는 프로젝트에 스크립트를 전부 적용할 수 있는 jsfl을 추가하였습니다.
+   - 명령어는 ######입니다.
+
+#### 버그 수정
+
+1. **Apply Script.jsfl 수정**
+   - 스크립트 적용 완료 후 메인 타임라인으로 자동 이동하지 않는 문제를 수정하였습니다.
+
+

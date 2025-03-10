@@ -2,7 +2,7 @@
   "name": "yongha",
   "displayName": "Animate Extension",
   "description": "This extension was created for Adobe Animate.",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "engines": {
     "vscode": "^1.97.0"
   },
@@ -59,18 +59,24 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "rebuild-robotjs": "electron-rebuild -f -w robotjs -v 34.2.0",
+    "postinstall": "npm run rebuild-robotjs"
   },
   "dependencies": {
+    "cheerio": "^1.0.0",
     "jsdom": "^26.0.0",
+    "robotjs": "^0.6.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@types/easeljs": "^1.0.5",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.97.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
+    "electron-rebuild": "^3.2.9",
     "eslint": "^9.19.0"
   }
 }
