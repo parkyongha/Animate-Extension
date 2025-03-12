@@ -9,27 +9,36 @@ const xml2js = require('xml2js');
  * @param {vscode.ExtensionContext} context
  */
 function onDirtyCheck(context) {
+    const debounceDelay = 300; // 300ms 딜레이
+    const debounceTimers = {};
+    
+    // 텍스트 문서 변경 이벤트
     const onChangeText = vscode.workspace.onDidChangeTextDocument(event => {
         const filePath = event.document.fileName;
         const fileName = path.basename(filePath);
 
-        // 파일의 부모 디렉터리의 부모 디렉터리를 사용
+        // 현재 파일에서 2단계 상위 폴더로 이동
         const folderPath = path.resolve(path.dirname(filePath), '..');
-
-        console.log(`텍스트 변경\nfolderPath: ${folderPath}\nfileName: ${fileName}`);
-
-        const folderData = globals.folderDatas[folderPath];
-
-        if (!folderData) {
-            console.warn(`폴더 데이터가 없습니다: ${folderPath}`);
-            return;
+    
+        // 각 문서별로 타이머 설정 (URI 또는 파일 경로를 key로 사용)
+        if (debounceTimers[filePath]) {
+            clearTimeout(debounceTimers[filePath]);
         }
+    
+        debounceTimers[filePath] = setTimeout(() => {
+            // 타이머 실행 시, Dirty 체크 실행
+            console.log(`디바운스 후 처리\nfolderPath: ${folderPath}\nfileName: ${fileName}`);
+            
+            const folderData = globals.folderDatas[folderPath];
+            
+            if (folderData && folderData.scripts.includes(fileName)) {
+                markXmlDirty(folderPath, fileName);
+            }
 
-        if (folderData.scripts.includes(fileName)) {
-            markXmlDirty(folderPath, fileName);
-        }
+            delete debounceTimers[filePath];
+        }, debounceDelay);
     });
-
+    
     context.subscriptions.push(onChangeText);
 }
 
@@ -42,7 +51,8 @@ function markXmlDirty(folderPath, fileName) {
     const folderData = globals.folderDatas[folderPath];
 
     const targetFrame = folderData.frames.find(frame => frame._ === fileName);
-    if (targetFrame) {
+
+    if (targetFrame && targetFrame.$.dirty == 'false') {
         targetFrame.$.dirty = true;
         console.log(`Dirty 처리 완료: ${fileName}`);
 

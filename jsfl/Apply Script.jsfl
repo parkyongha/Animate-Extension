@@ -42,7 +42,7 @@ function loadFiles() {
 
 	fileInfo.actionsPath = remainingParts.join("\\") + "\\actions\\";
 
-	// fl.trace(fileInfo.actionsPath);
+	fl.trace("Script 적용할 프로젝트 경로 : " + remainingParts.join("\\") + "\n\n");
 
 	var convertedPath = convertWindowsPathToURI(fileInfo.actionsPath);
 
