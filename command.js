@@ -113,7 +113,7 @@ async function ExcuteJSFL(jsflName) {
         const jsflFilePath = `"${absoluteJsflPath}"`;
 
         // Animate를 실행하면서 JSFL 파일을 인수로 전달
-        const command = `"${animateExePath}" -run ${jsflFilePath} -AlwaysRunJSFL`;
+        const command = `"${animateExePath}" -run ${jsflFilePath} []`;
         const { stdout, stderr } = await exec(command);
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);

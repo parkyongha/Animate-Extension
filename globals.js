@@ -1,4 +1,3 @@
-
 /**
  * @typedef {Object} FolderData
  * @property {*} xml - XML 데이터 (초기값: null)

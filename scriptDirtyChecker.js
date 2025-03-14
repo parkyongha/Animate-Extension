@@ -1,4 +1,5 @@
 const globals = require('./globals');
+
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
@@ -37,6 +38,11 @@ function onDirtyCheck(context) {
 
             delete debounceTimers[filePath];
         }, debounceDelay);
+    });
+
+
+    const onSaveText = vscode.workspace.onDidSaveTextDocument(event => {
+
     });
     
     context.subscriptions.push(onChangeText);
