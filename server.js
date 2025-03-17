@@ -1,7 +1,16 @@
 // server.js
 const net = require('net');
+const events = require('events');
 
 const PORT = 50313; // 사용할 포트 번호
+
+/**
+ * @type {net.Socket}
+ */
+let mySocket = null;
+
+class SocketEventEmitter extends events.EventEmitter { }
+const socketEventEmitter = new SocketEventEmitter();
 
 function startSocketServer() {
 
@@ -9,6 +18,9 @@ function startSocketServer() {
 
     // 소켓 서버 생성
     const server = net.createServer((socket) => {
+
+        mySocket = socket;
+
         console.log('클라이언트 연결됨.');
 
         // 클라이언트로부터 데이터 수신
@@ -17,7 +29,7 @@ function startSocketServer() {
             console.log(`클라이언트 메시지: ${message}`);
 
             // 메시지 처리 및 응답 전송 예제
-            socket.write('메시지 잘 받았습니다!');
+            socketEventEmitter.emit('data', data);
         });
 
         // 클라이언트 연결 종료 이벤트
@@ -35,9 +47,43 @@ function startSocketServer() {
     server.listen(PORT, () => {
         console.log(`서버가 포트 ${PORT}에서 대기 중입니다.`);
     });
-
 }
 
+/**
+ * 소켓으로 데이터 전송
+ * @param {Uint8Array | string} buffer 
+ * @returns {Promise<void>}
+ */
+function sendSocketData(buffer) {
+    return new Promise((resolve, reject) => {
+
+        mySocket.write(buffer, "utf-8", (err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+
+    });
+}
+
+/**
+ * 소켓 데이터 수신 이벤트 리스너 등록
+ * @param {(data: Buffer) => void} callback 
+ * @param {boolean} once 
+*/
+function onSocketDataListener(callback, once) {
+    if (once) {
+        socketEventEmitter.once('data', callback);
+    } else {
+        socketEventEmitter.on('data', callback);
+    }
+}
+
+// 이름 바꿀 수도 있을 것 같아서 임시로 이렇게 함
 module.exports = {
-    startSocketServer
+    startSocketServer: startSocketServer,
+    sendSocketData: sendSocketData,
+    onSocketDataListener: onSocketDataListener
 };
