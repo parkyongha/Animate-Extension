@@ -1,4 +1,5 @@
-// server.js
+const globals = require('./globals');
+
 const net = require('net');
 const events = require('events');
 
@@ -12,12 +13,15 @@ let mySocket = null;
 class SocketEventEmitter extends events.EventEmitter { }
 const socketEventEmitter = new SocketEventEmitter();
 
+globals.writeSocketDataAsync = writeSocketDataAsync;
+
 function startSocketServer() {
 
     console.log("서버 열게~");
 
     // 소켓 서버 생성
     const server = net.createServer((socket) => {
+        socket.setEncoding('utf-8');
 
         mySocket = socket;
 
@@ -46,6 +50,13 @@ function startSocketServer() {
     // 서버를 지정된 포트에서 대기 상태로 전환
     server.listen(PORT, () => {
         console.log(`서버가 포트 ${PORT}에서 대기 중입니다.`);
+
+        server.on('connection', (socket) => {
+            console.log('클라이언트가 연결되었습니다.');
+
+            // 클라이언트로 데이터 전송
+            socket.write('HI?\n');
+        });
     });
 }
 
@@ -54,16 +65,21 @@ function startSocketServer() {
  * @param {Uint8Array | string} buffer 
  * @returns {Promise<void>}
  */
-function sendSocketData(buffer) {
+function writeSocketDataAsync(buffer) {
     return new Promise((resolve, reject) => {
 
-        mySocket.write(buffer, "utf-8", (err) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve();
-            }
-        });
+        if (mySocket) {
+            mySocket.write(buffer, "utf-8", (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+            
+        } else {
+            reject(new Error('No client is connected.'));
+        }
 
     });
 }
@@ -84,6 +100,6 @@ function onSocketDataListener(callback, once) {
 // 이름 바꿀 수도 있을 것 같아서 임시로 이렇게 함
 module.exports = {
     startSocketServer: startSocketServer,
-    sendSocketData: sendSocketData,
+    sendSocketData: writeSocketDataAsync,
     onSocketDataListener: onSocketDataListener
 };
