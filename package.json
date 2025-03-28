@@ -2,7 +2,7 @@
   "name": "yongha",
   "displayName": "Animate Extension",
   "description": "This extension was created for Adobe Animate.",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "engines": {
     "vscode": "^1.97.0"
   },

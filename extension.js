@@ -4,7 +4,6 @@ const myHtmlParser = require('./htmlParser.js');
 const myCommand = require('./command.js');
 const myView = require('./view.js');
 const socket = require('./server.js');
-const globals = require('./globals.js'); 
 const scriptDirtyChecker = require('./scriptDirtyChecker.js');
 
 /**
@@ -14,11 +13,11 @@ const scriptDirtyChecker = require('./scriptDirtyChecker.js');
 async function activate(context) {
   console.log('Extension "yh" is now active!');
 
-  socket.start();
+  // socket.start();
 
-  socket.onMessage((message) => {
-    console.log('Message:', message);
-  });
+  // socket.onMessage((message) => {
+  //   console.log('Message:', message);
+  // });
 
   await Initialization(context);
   

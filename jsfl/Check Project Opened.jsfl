@@ -2,6 +2,8 @@
 // 현재 실행 중인 JSFL 스크립트의 파일명(확장자 제외)만 가져오는 예시 코드입니다.
 var message = Animate_C_Extension.startSocketClient();
 
+const responsePrefix = "response:";
+
 fl.trace(message);
 
 var scriptURI = fl.scriptURI;
@@ -17,6 +19,6 @@ fileName = fileName.replace(/\.jsfl$/i, "");
 var msg = Animate_C_Extension.getMessage(fileName);
 fl.trace(msg);
 
-const responsePrefix = "response:";
+
 
 Animate_C_Extension.sendMessage(responsePrefix + "true");
