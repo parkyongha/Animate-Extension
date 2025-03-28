@@ -1,3 +1,4 @@
+const socket = require('./server.js');
 
 const vscode = require('vscode');
 const util = require('util');
@@ -13,7 +14,30 @@ const ApplyAndBuildLabel = 'Script 적용하고 빌드하기';
 const BuildLabel = '빌드하기';
 const ApplyScriptLabel = 'Script 적용하기';
 const ExportScriptLabel = 'Script 내보내기';
+const CheckProjectOpenedLabel = 'Project 열려있는지 확인'
 
+const commandOptions = [
+    {
+        label: ApplyAndBuildLabel,
+        description: '작성한 Script들을 Animate에 적용하고 빌드합니다'
+    },
+    {
+        label: BuildLabel,
+        description: '작성한 Script들을 적용하고 빌드합니다'
+    },
+    {
+        label: ApplyScriptLabel,
+        description: '작성한 Script들을 Animate에 적용합니다.'
+    },
+    {
+        label: ExportScriptLabel,
+        description: 'Animate에 있는 Script들을 JS로 내보냅니다.'
+    },
+    {
+        label: CheckProjectOpenedLabel,
+        description: '현재 작업중인 스크립트의 프로젝트가 열려있는지 확인합니다.'
+    },
+];
 
 module.exports = {
     commandProvider
@@ -23,15 +47,9 @@ function commandProvider(context) {
 
     let command = vscode.commands.registerCommand('extension.openCustomCommandWindow', async function () {
         // 실행할 명령 옵션 배열 (QuickPickItem 형식)
-        const options = [
-            { label: ApplyAndBuildLabel, description: '작성한 Script들을 Animate에 적용하고 빌드합니다' },
-            { label: BuildLabel, description: '작성한 Script들을 적용하고 빌드합니다' },
-            { label: ApplyScriptLabel, description: '작성한 Script들을 Animate에 적용합니다.' },
-            { label: ExportScriptLabel, description: 'Animate에 있는 Script들을 JS로 내보냅니다.' },
-        ];
 
         // QuickPick 창을 띄워서 사용자가 명령 선택
-        const selected = await vscode.window.showQuickPick(options, {
+        const selected = await vscode.window.showQuickPick(commandOptions, {
             placeHolder: '실행할 명령을 선택하세요.'
         });
 
@@ -58,6 +76,21 @@ function commandProvider(context) {
                     // 먼저 Export Script, 성공 시 Apply Script 실행
                     handleJSFL("Apply And Publish", "Script 적용하고 빌드", "Script 적용 or 빌드 실패")
                         .catch(err => console.error(err));
+
+                case CheckProjectOpenedLabel:
+                    socket.send("Check Project Opened:E3_1_U5_P1_Q2_BW_5775331");
+
+                    socket.onDone(() => {
+
+                        console.log("DONE~");
+
+                        handleJSFL("Check Project Opened", "프로젝트가 열려있습니다.", "프로젝트가 열려있지 않습니다.")
+                            .catch(err => console.error(err));
+
+                        socket.onResponse((response) => {
+                            console.log(`결과입니다~${response}`);
+                        });
+                    });
 
                     break;
                 default:
@@ -168,7 +201,7 @@ function autoDialogExcute() {
 
             // key가 "DontPromptForJSFLOpen"인 객체 찾기
             const JSFLOpen = propPairs.find(pair => pair.key && pair.key[0] === 'DontPromptForJSFLOpen');
-            const runJSFL = propPairs.find(pair => pair.key && pair.key[0] === 'RunJSFLAsCommand');
+            // const runJSFL = propPairs.find(pair => pair.key && pair.key[0] === 'RunJSFLAsCommand');
 
             if (!JSFLOpen) {
                 console.error('DontPromptForJSFLOpen 키를 찾을 수 없습니다.');

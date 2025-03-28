@@ -12,13 +12,9 @@ const globals = {
      */
     folderDatas: {
     },
-    /**
-     * 소켓으로 데이터 전송
-     * @type {function(Uint8Array | string): void}
-     */
-    writeSocketDataAsync: null,
 };
 
+// 디버깅용
 global.globals = globals;
 
 module.exports = globals;

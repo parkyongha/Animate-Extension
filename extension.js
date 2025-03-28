@@ -3,7 +3,8 @@ const vscode = require('vscode');
 const myHtmlParser = require('./htmlParser.js');
 const myCommand = require('./command.js');
 const myView = require('./view.js');
-const myServer = require('./server.js');
+const socket = require('./server.js');
+const globals = require('./globals.js'); 
 const scriptDirtyChecker = require('./scriptDirtyChecker.js');
 
 /**
@@ -13,7 +14,11 @@ const scriptDirtyChecker = require('./scriptDirtyChecker.js');
 async function activate(context) {
   console.log('Extension "yh" is now active!');
 
-  myServer.startSocketServer();
+  socket.start();
+
+  socket.onMessage((message) => {
+    console.log('Message:', message);
+  });
 
   await Initialization(context);
   

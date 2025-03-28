@@ -1,105 +1,112 @@
-const globals = require('./globals');
-
 const net = require('net');
-const events = require('events');
+const EventEmitter = require('events');
 
-const PORT = 50313; // 사용할 포트 번호
+class SocketServer extends EventEmitter {
 
-/**
- * @type {net.Socket}
- */
-let mySocket = null;
+    
 
-class SocketEventEmitter extends events.EventEmitter { }
-const socketEventEmitter = new SocketEventEmitter();
+    constructor(port = 50313) {
+        super();
+        this.port = port;
 
-globals.writeSocketDataAsync = writeSocketDataAsync;
+        /** @type {net.Server} */
+        this.server = null;
 
-function startSocketServer() {
+        /** @type {net.Socket | null} */
+        this.clientSocket = null;
 
-    console.log("서버 열게~");
+        this.buffer = '';
 
-    // 소켓 서버 생성
-    const server = net.createServer((socket) => {
-        socket.setEncoding('utf-8');
+        this.responsePrefix = "response:";
+        this.doneMsg = "DONE";
+    }
 
-        mySocket = socket;
+    start() {
+        this.server = net.createServer((socket) => {
+            socket.setEncoding('utf-8');
+            this.clientSocket = socket;
+            console.log('클라이언트 연결됨.');
 
-        console.log('클라이언트 연결됨.');
+            socket.on('data', (data) => this._handleData(data));
+            socket.on('end', () => console.log('클라이언트 연결 종료됨.'));
+            socket.on('error', (err) => console.error('소켓 오류:', err));
 
-        // 클라이언트로부터 데이터 수신
-        socket.on('data', (data) => {
-            const message = data.toString().trim();
-            console.log(`클라이언트 메시지: ${message}`);
-
-            // 메시지 처리 및 응답 전송 예제
-            socketEventEmitter.emit('data', data);
+            // 테스트용
+            this.send("Test:HI,HELLO,PAPPP");
         });
 
-        // 클라이언트 연결 종료 이벤트
-        socket.on('end', () => {
-            console.log('클라이언트 연결 종료됨.');
+        this.server.listen(this.port, () => {
+            console.log(`서버가 포트 ${this.port}에서 대기 중입니다.`);
         });
+    }
 
-        // 오류 처리 (옵션)
-        socket.on('error', (err) => {
-            console.error('소켓 오류:', err);
-        });
-    });
+    _handleData(data) {
+        this.buffer += data.toString();
+        let newlineIndex;
+        while ((newlineIndex = this.buffer.indexOf('\n')) !== -1) {
+            const msg = this.buffer.slice(0, newlineIndex);
+            this.buffer = this.buffer.slice(newlineIndex + 1);
 
-    // 서버를 지정된 포트에서 대기 상태로 전환
-    server.listen(PORT, () => {
-        console.log(`서버가 포트 ${PORT}에서 대기 중입니다.`);
+            console.log('수신:', msg);
 
-        server.on('connection', (socket) => {
-            console.log('클라이언트가 연결되었습니다.');
+            this.emit('message', msg);
 
-            // 클라이언트로 데이터 전송
-            socket.write('HI?\n');
-        });
-    });
-}
+            if (msg.startsWith(this.responsePrefix)) {
+                this.emit('response', msg.slice(this.responsePrefix.length));
+            }
 
-/**
- * 소켓으로 데이터 전송
- * @param {Uint8Array | string} buffer 
- * @returns {Promise<void>}
- */
-function writeSocketDataAsync(buffer) {
-    return new Promise((resolve, reject) => {
-
-        if (mySocket) {
-            mySocket.write(buffer, "utf-8", (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-            
-        } else {
-            reject(new Error('No client is connected.'));
+            if (msg.toUpperCase() == this.doneMsg) {
+                console.log("-server.js DONE");
+                this.emit('done');
+            }
         }
+    }
 
-    });
-}
+    /**
+     * 데이터 전송
+     * @param {string} data 
+     * @returns {Promise<void>}
+     */
+    send(data) {
+        console.log("-server.js send data:", data);
+        data += '\n';
 
-/**
- * 소켓 데이터 수신 이벤트 리스너 등록
- * @param {(data: Buffer) => void} callback 
- * @param {boolean} once 
-*/
-function onSocketDataListener(callback, once) {
-    if (once) {
-        socketEventEmitter.once('data', callback);
-    } else {
-        socketEventEmitter.on('data', callback);
+        return new Promise((resolve, reject) => {
+            if (this.clientSocket) {
+                this.clientSocket.write(data, 'utf-8', (err) => {
+                    err ? reject(err) : resolve();
+                });
+            } else {
+                reject(new Error('No client connected.'));
+            }
+        });
+    }
+
+    /**
+     * "DONE" 메시지 수신 시 실행될 콜백 등록
+     * @param {() => void} callback 
+     */
+    onDone(callback) {
+        this.on('done', callback);
+    }
+
+    /**
+     * 일반 메시지 수신 콜백
+     * @param {(msg: string) => void} callback 
+     */
+    onMessage(callback) {
+        this.on('message', callback);
+    }
+
+    /**
+     * 요청에 대한 응답 메시지를 받을 때 콜백을 등록합니다.
+     * @param {(msg: string) => void} callback 
+     */
+    onResponse(callback) {
+        this.once('response', callback);
     }
 }
 
-// 이름 바꿀 수도 있을 것 같아서 임시로 이렇게 함
-module.exports = {
-    startSocketServer: startSocketServer,
-    sendSocketData: writeSocketDataAsync,
-    onSocketDataListener: onSocketDataListener
-};
+const server = new SocketServer();
+
+module.exports = server;
